@@ -60,6 +60,7 @@ cp .env.example .env
 
 用 Claude Code、Cursor 或任何支持 `CLAUDE.md` 的工具打开此文件夹，然后输入：
 
+**主题调研：**
 > "帮我调研自动驾驶世界模型方向"
 
 AI 会自动：
@@ -71,6 +72,16 @@ AI 会自动：
 6. 在 `topics/<slug>/report.md` 中撰写全景覆盖的报告
    - 每篇论文：1-2 句话总结 + 引用数（like related work）
    - 最重要的 ~10 篇论文：更深入的分析（2-3 段）
+
+**论文深读：**
+> "详细解读 Transformer 论文（1706.03762）"
+
+AI 会自动：
+1. 在 `readings/` 下创建阅读文件夹
+2. 获取论文元数据和结构
+3. 阅读所有主要章节
+4. 在 `readings/<paper_id>_<slug>/report.md` 中撰写详细分析
+   - 结构化章节：研究动机、方法、贡献、结果、优势、局限、影响
 
 所有获取的数据缓存在 `papers/` 中 — 以后的查询直接复用，不消耗 API 配额。
 
@@ -94,6 +105,9 @@ ChatXiv/
 │       ├── topic.json   # 元数据、查询历史
 │       ├── papers.jsonl # 本主题的论文列表
 │       └── report.md   # 调研报告
+├── readings/            # 论文深读（每篇论文一个文件夹）
+│   └── <paper_id>_<slug>/
+│       └── report.md    # 论文详细分析
 └── scripts/
     ├── chatxiv.py       # 主 CLI 入口
     └── lib/             # 内部模块
@@ -177,6 +191,40 @@ python scripts/chatxiv.py search "..." --limit 100 --topic "..."
         │
         ▼
 AI 撰写全景覆盖报告 → topics/<slug>/report.md
+```
+
+## 工作原理（论文深读）
+
+```
+用户提出深读请求
+        │
+        ▼
+AI 读取 CLAUDE.md → 理解论文深读工作流
+        │
+        ▼
+python scripts/chatxiv.py brief 1706.03762
+python scripts/chatxiv.py head 1706.03762 --with-paragraph-counts
+        │
+        ├── 检查 papers/ 本地缓存
+        │       │
+        │       ▼ （缓存未命中）
+        │
+        ├── 调用 DeepXiv API
+        │       │
+        │       ▼
+        │   保存到 papers/1706.03762.json
+        │
+        ▼
+AI 阅读所有主要章节
+        │
+        ▼
+python scripts/chatxiv.py read 1706.03762 "Introduction"
+python scripts/chatxiv.py read 1706.03762 "Model Architecture"
+python scripts/chatxiv.py read 1706.03762 "Why Self-Attention"
+python scripts/chatxiv.py read 1706.03762 "Results"
+        │
+        ▼
+AI 撰写详细分析 → readings/1706.03762_transformer/report.md
 ```
 
 ## 系统要求

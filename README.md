@@ -80,7 +80,8 @@ The AI will:
 1. Create a reading folder under `readings/`
 2. Fetch paper metadata and structure
 3. Read all major sections
-4. Write a comprehensive explanation in `readings/<paper_id>_<slug>/explanation.md`
+4. Write a comprehensive report in `readings/<paper_id>_<slug>/report.md`
+   - Structured sections: Motivation, Methodology, Contributions, Results, Strengths, Limitations, Impact
 
 All fetched data is cached in `papers/` — future queries reuse it without API calls.
 
@@ -106,7 +107,7 @@ ChatXiv/
 │       └── report.md    # Research report
 ├── readings/            # Paper readings (one folder per paper)
 │   └── <paper_id>_<slug>/
-│       └── explanation.md # Comprehensive paper explanation
+│       └── report.md    # Comprehensive paper analysis
 └── scripts/
     ├── chatxiv.py       # Main CLI entry point
     └── lib/             # Internal modules
@@ -242,7 +243,7 @@ python scripts/chatxiv.py read 1706.03762 "Why Self-Attention"
 python scripts/chatxiv.py read 1706.03762 "Results"
         │
         ▼
-AI writes comprehensive explanation → readings/1706.03762_transformer/explanation.md
+AI writes comprehensive explanation → readings/1706.03762_transformer/report.md
 ```
 
 ## Requirements
