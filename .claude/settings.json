@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python scripts/chatxiv.py *)",
+      "Bash(python3 scripts/chatxiv.py *)"
+    ]
+  }
+}
