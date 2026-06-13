@@ -28,7 +28,7 @@
 ### 1. 克隆
 
 ```bash
-git clone https://github.com/<your-org>/ChatXiv.git
+git clone https://github.com/happytianhao/ChatXiv.git
 cd ChatXiv
 ```
 

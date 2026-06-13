@@ -122,6 +122,7 @@ def cmd_search(args: argparse.Namespace) -> int:
 
     seen: set[str] = set()
     merged: list[dict] = []
+    new_ids: list[str] = []
     for raw in remote_papers:
         p = _normalize_paper(raw, default_source=args.source)
         pid = p.get("paper_id")
@@ -129,6 +130,7 @@ def cmd_search(args: argparse.Namespace) -> int:
             continue
         seen.add(pid)
         store.upsert(pid, p)
+        new_ids.append(pid)
         merged.append(store.load(pid) or p)
     for p in local_hits:
         pid = p.get("paper_id", "")
@@ -145,6 +147,14 @@ def cmd_search(args: argparse.Namespace) -> int:
         topic_store.append_query(slug, query, len(merged))
         topic_store.append_papers(slug, [_paper_summary(p) for p in merged])
         print(f"[topic] saved to topics/{slug}/\n")
+
+    if new_ids and not args.no_pdf:
+        print(f"[pdf] auto-downloading {len(new_ids)} new papers' PDFs -> {paths.pdfs}/")
+        counts = _sync_pdfs(store, paths.pdfs, new_ids, verbose=False)
+        print(
+            f"[pdf] {counts['downloaded']} downloaded, {counts['skipped']} already had, "
+            f"{counts['no_url']} without url, {counts['error']} errors.\n"
+        )
 
     print(fmt.fmt_search_list(merged, with_tldr=args.with_tldr))
     return 0
@@ -341,8 +351,94 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def _sync_pdfs(
+    store: PaperStore,
+    pdf_dir: Path,
+    paper_ids: list[str],
+    *,
+    overwrite: bool = False,
+    timeout: int = 60,
+    delay: float = 0.5,
+    verbose: bool = True,
+) -> dict[str, int]:
+    """Ensure each given paper has a PDF in pdf_dir. Skips existing files.
+
+    Returns a counts dict with keys: downloaded, skipped, no_url, error.
+    """
+    from lib import downloader as dl
+
+    pdf_dir.mkdir(parents=True, exist_ok=True)
+    counts = {"downloaded": 0, "skipped": 0, "no_url": 0, "error": 0}
+    errors: list[str] = []
+
+    for paper_id in paper_ids:
+        record = store.load(paper_id)
+        if not record:
+            counts["error"] += 1
+            errors.append(f"{paper_id}: not in cache")
+            continue
+
+        url = record.get("pdf_url")
+        title = record.get("title") or paper_id
+        if not url:
+            counts["no_url"] += 1
+            if verbose:
+                print(f"  [no_url]     {paper_id}  ({title[:60]})")
+            continue
+
+        dest = pdf_dir / dl.pdf_filename(paper_id, title)
+        result = dl.download_pdf(url, dest, timeout=timeout, overwrite=overwrite)
+        counts[result.status] = counts.get(result.status, 0) + 1
+
+        if verbose:
+            tag = f"[{result.status}]".ljust(13)
+            print(f"  {tag}{paper_id}  {dest.name}")
+        if result.status == "error":
+            errors.append(f"{paper_id}: {result.detail}")
+        if result.status == "downloaded":
+            dl.throttle(delay)
+
+    if verbose and errors:
+        print("\nErrors:")
+        for e in errors[:30]:
+            print(f"  - {e}")
+        if len(errors) > 30:
+            print(f"  ... and {len(errors) - 30} more")
+    return counts
+
+
+def cmd_download_pdf(args: argparse.Namespace) -> int:
+    """Download PDFs for cached papers into pdfs/, named '<paper_id> - <title>.pdf'.
+
+    With no IDs, scans the whole cache: a completeness check that downloads
+    only the missing PDFs (existing files are skipped).
+    """
+    paths = Paths.detect()
+    store = PaperStore(paths.papers)
+
+    paper_ids = args.paper_ids or store.list_ids()
+    if not paper_ids:
+        print("No cached papers to download.")
+        return 0
+
+    print(f"[pdf] checking {len(paper_ids)} papers -> {paths.pdfs}/\n")
+    counts = _sync_pdfs(
+        store, paths.pdfs, paper_ids,
+        overwrite=args.overwrite, timeout=args.timeout, delay=args.delay,
+    )
+    have = counts["downloaded"] + counts["skipped"]
+    print(
+        f"\n[pdf] done: {counts['downloaded']} downloaded, {counts['skipped']} skipped, "
+        f"{counts['no_url']} without url, {counts['error']} errors. "
+        f"({have}/{len(paper_ids)} papers now have a PDF)"
+    )
+    return 1 if counts["error"] else 0
+
+
+
 def cmd_topic(args: argparse.Namespace) -> int:
     paths = Paths.detect()
+    load_env(paths)
     topic_store = TopicStore(paths.topics)
 
     if args.topic_cmd == "create":
@@ -409,6 +505,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--rerank", action="store_true", help="Enable fine reranking")
     sp.add_argument("--remote-only", dest="remote_only", action="store_true")
     sp.add_argument("--with-tldr", dest="with_tldr", action="store_true")
+    sp.add_argument("--no-pdf", dest="no_pdf", action="store_true",
+                    help="Skip auto-downloading PDFs for newly fetched papers")
 
     sp = sub.add_parser("brief", help="Show paper brief (title, TLDR, keywords)")
     sp.add_argument("paper_id")
@@ -439,6 +537,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("status", help="Show cache status for a paper")
     sp.add_argument("paper_id")
+
+    sp = sub.add_parser("download-pdf", help="Download PDFs for cached papers into pdfs/")
+    sp.add_argument("paper_ids", nargs="*", help="Paper IDs (default: all cached papers)")
+    sp.add_argument("--overwrite", action="store_true", help="Re-download even if the PDF exists")
+    sp.add_argument("--timeout", type=int, default=60, help="Per-download timeout in seconds")
+    sp.add_argument("--delay", type=float, default=0.5,
+                    help="Polite delay (seconds) between successful downloads")
 
     tp = sub.add_parser("topic", help="Manage research topics")
     tsub = tp.add_subparsers(dest="topic_cmd")
@@ -471,6 +576,7 @@ def main() -> int:
         "read": cmd_read,
         "local-find": cmd_local_find,
         "status": cmd_status,
+        "download-pdf": cmd_download_pdf,
         "topic": cmd_topic,
     }
     handler = dispatch.get(args.command)

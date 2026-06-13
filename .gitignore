@@ -20,11 +20,13 @@ dist/
 # Local paper cache and topic outputs are user data.
 # Uncomment the next lines if you want to keep them private.
 papers/
+pdfs/
 topics/
 readings/
 
 # Keep the directory placeholders even when ignoring contents.
 !papers/.gitkeep
+!pdfs/.gitkeep
 !topics/.gitkeep
 !readings/.gitkeep
 

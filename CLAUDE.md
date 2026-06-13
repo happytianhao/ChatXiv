@@ -137,6 +137,7 @@ All commands are run from the project root:
 | `python scripts/chatxiv.py read <paper_id> "<Section>" [--grep ... \| --range N:M \| --paragraphs N]` | Read a section, optionally zoom into specific paragraphs. |
 | `python scripts/chatxiv.py local-find "<query>"` | Search local cache only (no API calls). |
 | `python scripts/chatxiv.py status <paper_id>` | Show what's cached for a paper. |
+| `python scripts/chatxiv.py download-pdf [<paper_id> ...]` | Download PDFs into `pdfs/`, named `<paper_id> - <title>.pdf`. No IDs = all cached papers (completeness check). Skips existing files. |
 | `python scripts/chatxiv.py topic create "<name>"` | Create a new research topic folder. |
 | `python scripts/chatxiv.py topic list` | List all topics. |
 | `python scripts/chatxiv.py topic show "<name>"` | Show topic metadata and query history. |
@@ -149,6 +150,7 @@ All commands are run from the project root:
 - `--with-tldr` — include TLDR in search result listings.
 - `--with-paragraph-counts` — on `head`, also show paragraph count per cached section.
 - `--topic "Name"` — attach search results to a topic.
+- `--no-pdf` — on `search`, skip auto-downloading PDFs for newly fetched papers.
 - `--source biorxiv|medrxiv` — search bioRxiv or medRxiv instead of arXiv.
 - `--categories cs.CV,cs.AI` — filter by arXiv categories.
 - `--date-from 2024-01` — filter by publication date.

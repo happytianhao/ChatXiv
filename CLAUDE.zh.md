@@ -137,6 +137,7 @@ python scripts/chatxiv.py read 1706.03762 "Conclusion"
 | `python scripts/chatxiv.py read <paper_id> "<章节名>" [--grep ... \| --range N:M \| --paragraphs N]` | 阅读章节，可选择精读特定段落。 |
 | `python scripts/chatxiv.py local-find "<查询>"` | 仅搜索本地缓存（不调用 API）。 |
 | `python scripts/chatxiv.py status <paper_id>` | 查看某篇论文的缓存状态。 |
+| `python scripts/chatxiv.py download-pdf [<paper_id> ...]` | 将 PDF 下载到 `pdfs/`，文件名为 `<paper_id> - <标题>.pdf`。不带 ID 表示下载所有已缓存论文（完整性检查）。已存在的文件会被跳过。 |
 | `python scripts/chatxiv.py topic create "<名称>"` | 创建新的调研主题文件夹。 |
 | `python scripts/chatxiv.py topic list` | 列出所有主题。 |
 | `python scripts/chatxiv.py topic show "<名称>"` | 查看主题详情和查询历史。 |
@@ -149,6 +150,7 @@ python scripts/chatxiv.py read 1706.03762 "Conclusion"
 - `--with-tldr` — 在搜索结果中显示 TLDR。
 - `--with-paragraph-counts` — `head` 命令同时输出每个已缓存章节的段落数。
 - `--topic "名称"` — 将搜索结果关联到某个主题。
+- `--no-pdf` — 在 `search` 命令中，跳过自动下载新获取论文的 PDF。
 - `--source biorxiv|medrxiv` — 搜索 bioRxiv 或 medRxiv。
 - `--categories cs.CV,cs.AI` — 按 arXiv 类别过滤。
 - `--date-from 2024-01` — 按发表日期过滤。

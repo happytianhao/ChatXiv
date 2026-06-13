@@ -28,7 +28,7 @@ Like chatting with arxiv: search, read, understand, and organize the literature 
 ### 1. Clone
 
 ```bash
-git clone https://github.com/<your-org>/ChatXiv.git
+git clone https://github.com/happytianhao/ChatXiv.git
 cd ChatXiv
 ```
 

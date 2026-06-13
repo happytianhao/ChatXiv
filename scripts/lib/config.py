@@ -24,6 +24,7 @@ def _detect_root() -> Path:
 class Paths:
     root: Path
     papers: Path
+    pdfs: Path
     topics: Path
     env_file: Path
 
@@ -33,6 +34,7 @@ class Paths:
         return cls(
             root=root,
             papers=root / "papers",
+            pdfs=root / "pdfs",
             topics=root / "topics",
             env_file=root / ".env",
         )
@@ -61,3 +63,14 @@ def load_env(paths: Paths | None = None) -> None:
 
 def get_token() -> str | None:
     return os.environ.get("DEEPXIV_TOKEN") or None
+
+
+def get_report_language() -> str:
+    """Report language code from REPORT_LANGUAGE env (defaults to 'en')."""
+    return (os.environ.get("REPORT_LANGUAGE") or "en").strip().lower()
+
+
+def report_filename(lang: str | None = None) -> str:
+    """Report filename for a language: 'report.md' for en, 'report_<lang>.md' otherwise."""
+    lang = (lang or get_report_language()).strip().lower()
+    return "report.md" if lang in ("", "en") else f"report_{lang}.md"

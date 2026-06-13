@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .config import report_filename
+
 logger = logging.getLogger(__name__)
 
 _SLUG_BAD = re.compile(r"[^a-z0-9]+")
@@ -58,7 +60,7 @@ class TopicStore:
             )
         papers_file = path / "papers.jsonl"
         papers_file.touch(exist_ok=True)
-        report = path / "report.md"
+        report = path / report_filename()
         if not report.exists():
             report.write_text(
                 f"# {title}\n\n"
